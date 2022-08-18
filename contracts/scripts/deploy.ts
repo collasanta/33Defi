@@ -2,9 +2,9 @@ import { ethers } from "hardhat";
 import "@nomiclabs/hardhat-ethers";
 
 async function main() {
-
+  const aggreggatorAddress = "0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada" //MUMBAI
   const MentoraSwap = await ethers.getContractFactory("mentoraSwap");
-  const mentoraSwap = await MentoraSwap.deploy();
+  const mentoraSwap = await MentoraSwap.deploy(aggreggatorAddress);
 
   await mentoraSwap.deployed();
 

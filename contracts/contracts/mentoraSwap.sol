@@ -7,6 +7,8 @@ pragma abicoder v2;
  * @notice This contract is used to manage swaps between gameplayers and Mentora.
  */
 
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "./Price.sol";
@@ -25,21 +27,15 @@ interface IWmaticContract {
     function balanceOf(address) external returns (uint256);
 }
 
-contract mentoraSwap is PriceConsumerMaticDollar {
-    /** @notice This contract is used to manage swaps between gameplayers and Mentora.
-     *  @dev This interface is used to address matic/wmatic conversion.
-     */
-    constructor(address aggregator, address)
-        PriceConsumerMaticDollar(aggregator)
-    {
+contract mentoraSwap is AccessControl, PriceConsumerMaticDollar {
+    constructor(address aggregator) PriceConsumerMaticDollar(aggregator) {
         owner = payable(msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(WITHDRAW_ROLE, msg.sender);
+        _grantRole(CHANGE_FEE_ORDER_AMOUNT_ROLE, msg.sender);
     }
 
-    modifier onlyOwner() {
-        require(msg.sender == owner);
-        _;
-    }
-
+    address payable public owner;
     ISwapRouter public constant swapRouter =
         ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
     address public constant wMaticAddress =
@@ -48,15 +44,18 @@ contract mentoraSwap is PriceConsumerMaticDollar {
         0xd2B2Ad7252AA2f633223c9863dd979772E7FB416;
     address public constant swapRouterAddress =
         0xE592427A0AEce92De3Edee1F18E0157C05861564;
-    address payable public owner;
+
+    uint256 public bipsTxFeeAmountA = 100;
+    uint256 public bipsTxFeeAmountB = 75;
+    uint256 public bipsTxFeeAmountC = 50;
+    uint256 public priceRangeA = 10 * 10**18;
+    uint256 public priceRangeB = 100 * 10**18;
     uint256 internal bipsFeeAmount;
     uint256 internal amountOut;
     uint256 internal amountSwap;
-    uint256 public bipsTxFeeAmountA = 300; // ATÉ 10 USD
-    uint256 public bipsTxFeeAmountB = 100; // ENTRE 10USD E 100 USD
-    uint256 public bipsTxFeeAmountC = 50; // ACIMA DE 100 USD
-    uint256 public priceRangeA = 10 * 10**18; //até 10 USD
-    uint256 public priceRangeB = 100 * 10**18; // 100 USD
+
+    bytes32 public constant WITHDRAW_ROLE = keccak256("WITHDRAW_ROLE");
+    bytes32 public constant CHANGE_FEE_ORDER_AMOUNT_ROLE = keccak256("CHANGE_FEE_ORDER_AMOUNT_ROLE");
 
     event ContractWithdraw(address indexed _owner, uint indexed _amount);
     event ChangeOnPriceRangeA(address indexed _caller, uint indexed _newRange);
@@ -75,54 +74,40 @@ contract mentoraSwap is PriceConsumerMaticDollar {
         uint indexed _amountOut
     );
 
-    receive() external payable {}
+    /** @notice This couple of setPriceRange functions, defines the ranges where is applyed taxes.
+     *  @dev Set the new range to applyed taxes.
+     *  @param _newRangeA B and C is the value of new range.
+     */
 
-    fallback() external payable {
-        revert("Operation not allowed. Please execute a valid function!");
-    }
-
-    // WITHDRAW
-    function withdraw(uint amount) public onlyOwner returns (bool) {
-        require(amount <= address(this).balance);
-        // owner.transfer(amount);
-        (bool success, ) = payable(owner).call{value: amount}("");
-        if (!success) {
-            revert("Failure on withdraw!");
-        }
-        emit ContractWithdraw(owner, amount);
-        return true;
-    }
-
-    //SETS RANGES
-
-    function setPriceRangeA(uint256 _newRangeA) public {
+    function setPriceRangeA(uint256 _newRangeA) onlyRole(CHANGE_FEE_ORDER_AMOUNT_ROLE) public {
         priceRangeA = _newRangeA;
         emit ChangeOnPriceRangeA(msg.sender, _newRangeA);
     }
 
-    function setPriceRangeB(uint256 _newRangeB) public {
+    function setPriceRangeB(uint256 _newRangeB) onlyRole(CHANGE_FEE_ORDER_AMOUNT_ROLE) public {
         priceRangeB = _newRangeB;
         emit ChangeOnPriceRangeB(msg.sender, _newRangeB);
     }
 
-    //SET FEES
-
-    function setTxFeeRangeA(uint256 _bipsnewFeeA) public {
+    /** @notice This couple of setTxFeeRange functions, defines the fees applyed on the ranges.
+     *  @dev Set the new fee to apply on ranges.
+     *  @param _bipsnewFeeA B and C is the new fee value.
+     */
+    function setTxFeeRangeA(uint256 _bipsnewFeeA) onlyRole(CHANGE_FEE_ORDER_AMOUNT_ROLE)  public {
         bipsTxFeeAmountA = _bipsnewFeeA;
         emit ChangeOnTxFeeRangeA(msg.sender, _bipsnewFeeA);
     }
 
-    function setTxFeeRangeB(uint256 _bipsnewFeeB) public {
+    function setTxFeeRangeB(uint256 _bipsnewFeeB) onlyRole(CHANGE_FEE_ORDER_AMOUNT_ROLE)  public {
         bipsTxFeeAmountB = _bipsnewFeeB;
         emit ChangeOnTxFeeRangeB(msg.sender, _bipsnewFeeB);
     }
 
-    function setTxFeeRangeC(uint256 _bipsnewFeeC) public {
+    function setTxFeeRangeC(uint256 _bipsnewFeeC) onlyRole(CHANGE_FEE_ORDER_AMOUNT_ROLE)  public {
         bipsTxFeeAmountC = _bipsnewFeeC;
         emit ChangeOnTxFeeRangeC(msg.sender, _bipsnewFeeC);
     }
 
-    //SWAPs MATIC to MWP
     function returnFee(uint256 amountMATIC) internal returns (uint256) {
         uint amountUSD = getPriceUSD(amountMATIC);
         if (amountUSD < priceRangeA) {
@@ -135,23 +120,29 @@ contract mentoraSwap is PriceConsumerMaticDollar {
         return bipsFeeAmount;
     }
 
+    /** @notice This function swaps the Polygon native token(MATIC) to  Mentora Well Played token(MWP)
+     *  @dev This payable function will use the amount defined on msg.value to swap to MWP.
+     *  @dev A fee is applyed on this amount.
+     *  @dev This contract deposits this amount at Wrapped Matic contract. The WMatic contract, receives MATIC and returns WMATIC.
+     *  @dev The WMatic contract aproves this contract to spend the value informed.
+     *  @dev Once aproved, this contract send the amount to Uniswap Router to swap tokens.
+     *  @dev The Uniswap Router transfer the new token to the msg.send.
+     *  @param _deadline the unix time after which a swap will fail, to protect against long-pending transactions and wild swings in prices.
+     *  @param _minAmountOut the mininum amount acceptable.
+     *  @param _fee The fee tier of the pool, used to determine the correct pool contract in which to execute the swap.
+     */
     function MaticToMwp(
         uint256 _deadline,
         uint256 _minAmountOut,
         uint24 _fee
     ) external payable {
-        // GET RESPECTIVE MATIC AMOUNT DEPOSIT IN DOLLAR
-        // Contract Reveice MATICs from User
-        // Contract deducts convenience Fee
         amountSwap = msg.value - ((msg.value * bipsFeeAmount) / 10000);
-        // Contract Wrapps the MATIC into wMATIC
         IWmaticContract(wMaticAddress).deposit{value: amountSwap}();
         TransferHelper.safeApprove(
             wMaticAddress,
             address(swapRouter),
             amountSwap
         );
-        //Contract calls uni router and do the swap
         amountOut = swap(
             wMaticAddress,
             MwpAddress,
@@ -164,13 +155,25 @@ contract mentoraSwap is PriceConsumerMaticDollar {
         emit MaticToMwpTransaction(msg.sender, amountSwap, amountOut);
     }
 
+    /** @notice This function swaps the Mentora Well Played token(MWP) to Polygon native token(MATIC).
+     *  @dev First of all, it needed aprove this contract to spend the MWP balance.
+     *  @dev Then, it is transfers the balance from msg.sender address to this contract.
+     *  @dev This contract aproves Uniswap Router to spend the value informed.
+     *  @dev Once aproved, this contract send the amount to Uniswap Router to swap tokens.
+     *  @dev The Uniswap Router transfer the WMATIC to this contract.
+     *  @dev Then this contract withdraws the amount from WMATIC contract.
+     *  @dev In the end, the amount is transfered to msg.sender.
+     *  @param _amountSwap the amount in MWP to swap to Matic
+     *  @param _deadline the unix time after which a swap will fail, to protect against long-pending transactions and wild swings in prices.
+     *  @param _minAmountOut the mininum amount acceptable.
+     *  @param _fee The fee tier of the pool, used to determine the correct pool contract in which to execute the swap.
+     */
     function MwpToMatic(
         uint256 _amountSwap,
         uint256 _deadline,
         uint256 _minAmountOut,
         uint24 _fee
     ) public {
-        // msg.sender must approve this contract to transfer their funds
         TransferHelper.safeTransferFrom(
             MwpAddress,
             msg.sender,
@@ -188,17 +191,18 @@ contract mentoraSwap is PriceConsumerMaticDollar {
             _fee,
             address(this),
             _deadline,
-            _amountSwap, //aqui estava dando erro pq estava amountSwap
+            _amountSwap,
             _minAmountOut
         );
         IWmaticContract(wMaticAddress).withdraw(amountOut);
 
         amountSwap = amountOut - ((amountOut * bipsFeeAmount) / 10000);
-        //    payable(msg.sender).transfer(amountSwap);
+
         (bool success, ) = payable(msg.sender).call{value: amountSwap}("");
         if (!success) {
             revert("Failure on withdraw!");
         }
+
         emit MwpToMaticTransaction(msg.sender, _amountSwap, amountOut);
     }
 
@@ -224,5 +228,28 @@ contract mentoraSwap is PriceConsumerMaticDollar {
             });
         amountOut = swapRouter.exactInputSingle(params);
         return amountOut;
+    }
+
+    receive() external payable {}
+
+    fallback() external payable {
+        revert("Operation not allowed. Please execute a valid function!");
+    }
+
+    /** @dev Withdraw taxes balance of contract.
+     *  @param amount is the value to be withdrawn.
+     */
+    function withdraw(uint amount)
+        public
+        onlyRole(WITHDRAW_ROLE)
+        returns (bool)
+    {
+        require(amount <= address(this).balance);
+        (bool success, ) = payable(owner).call{value: amount}("");
+        if (!success) {
+            revert("Failure on withdraw!");
+        }
+        emit ContractWithdraw(owner, amount);
+        return true;
     }
 }

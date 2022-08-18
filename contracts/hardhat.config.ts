@@ -1,7 +1,10 @@
 require('@nomiclabs/hardhat-waffle')
 require('@nomiclabs/hardhat-ethers')
 require('@nomiclabs/hardhat-etherscan')
+require('@typechain/hardhat')
 require('dotenv').config()
+
+export {}
 
 module.exports = {
   solidity: {
@@ -17,13 +20,18 @@ module.exports = {
     },
     {
       version: "0.8.7"
+    },
+    {
+      version: "0.4.18"
     }
+    
   ]
 },
   networks: {
     hardhat:{
       forking:{
-        url: process.env.POLYGON_MUMBAI_RPC_PROVIDER
+        url: process.env.POLYGON_MUMBAI_RPC_PROVIDER,
+        blockNumber: 27649548 // LOCKING/CACHING THE BLOCK NUMBER WILL INCREASE SPEED THE VELOCITY OF TESTS UP TO 20X
       }
     },
     mumbai: {
@@ -45,5 +53,3 @@ module.exports = {
     }
   }
 }
-
-export {};
