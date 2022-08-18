@@ -1,15 +1,18 @@
-import hre from "hardhat";
-import "@nomiclabs/hardhat-ethers";
-const { ethers } = hre;
+import { ethers } from "hardhat";
 
 async function main() {
-  const aggreggatorAddress = "0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada" //MUMBAI
-  const MentoraSwap = await ethers.getContractFactory("mentoraSwap");
-  const mentoraSwap = await MentoraSwap.deploy(aggreggatorAddress);
+  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
+  const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
+  const unlockTime = currentTimestampInSeconds + ONE_YEAR_IN_SECS;
 
-  await mentoraSwap.deployed();
+  const lockedAmount = ethers.utils.parseEther("1");
 
-  console.log("mentoraSWAP deployed to:", mentoraSwap.address);
+  const Lock = await ethers.getContractFactory("Lock");
+  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+
+  await lock.deployed();
+
+  console.log(`Lock with 1 ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
