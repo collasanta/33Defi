@@ -1,3 +1,3 @@
-Defi ShowCase Project
+Defi ShowCase Project.
 
 Victor Henrique Collasanta
