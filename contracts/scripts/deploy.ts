@@ -1,5 +1,6 @@
-import { ethers } from "hardhat";
+import hre from "hardhat";
 import "@nomiclabs/hardhat-ethers";
+const { ethers } = hre;
 
 async function main() {
   const aggreggatorAddress = "0xd0D5e3DB44DE05E9F294BB0a3bEEaF030DE24Ada" //MUMBAI
