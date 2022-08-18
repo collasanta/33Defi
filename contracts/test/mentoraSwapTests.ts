@@ -11,9 +11,9 @@ const MWP = "0xd2B2Ad7252AA2f633223c9863dd979772E7FB416"
 const WMATIC = "0x9c3C9283D3e44854697Cd22D3Faa240Cfb032889"
 
 describe("Mentora Swap", () => {
-  let swapContract:MentoraSwap
-  let mwp:FMWP
-  let wmatic: WMATIC
+  let swapContract:any
+  let mwp:any
+  let wmatic: any
   let owner: SignerWithAddress, addr1: SignerWithAddress, addr2: SignerWithAddress, addr3: SignerWithAddress
   const deadline = (Math.floor(Date.now() / 1000 + 1800))
   const poolFee = 3000
