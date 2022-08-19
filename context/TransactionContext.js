@@ -20,6 +20,7 @@ const poolFee = 3000
 const MWP = new Token(chainId, MWPAddress, 18)
 const wMATIC = new Token(chainId, wMATICAddress, 18)
 
+
 let eth
 
 if (typeof window !== 'undefined') {
@@ -47,6 +48,8 @@ async function gasPriceEth() {
 
 export const TransactionProvider = ({ children }) => {
    const [currentAccount, setCurrentAccount] = useState()
+   const [MWPbalance, setMWPbalance] = useState()
+   const [MATICbalance, setMATICbalance] = useState()
    const [isLoading, setIsLoading] = useState(false)
 
    const routerx = useRouter()
@@ -54,12 +57,27 @@ export const TransactionProvider = ({ children }) => {
    useEffect(()=>{
       checkIfWalletIsConnected()
    })
-   
-   async function getContractBalance(metamask = eth) {
-      const provider = new ethers.providers.Web3Provider(metamask)
-      const balance = await provider.getBalance(customFeeCollectorAddress)
+
+      
+   async function getContractBalance() {
+      const balance = await web3Provider.getBalance(customFeeCollectorAddress)
       return ethers.utils.formatEther(balance.toString())
    }
+
+   async function getTokensBalance(currentAccount) {
+      const mwpContract = new ethers.Contract("0xd2b2ad7252aa2f633223c9863dd979772e7fb416", mwpContractABI, web3Provider)
+      console.log("currentAccount getMWPBalance", currentAccount)
+      const MWPBalance = await mwpContract.balanceOf(currentAccount)
+      const formatedMWPBalance = parseFloat(ethers.utils.formatUnits(MWPBalance, 18)).toFixed(2)
+      setMWPbalance(formatedMWPBalance.toString())
+      console.log("currentAccount getMWPBalance", currentAccount)
+      const balance = await web3Provider.getBalance(currentAccount)
+      const formatedbalance = parseFloat(ethers.utils.formatUnits(balance, 18)).toFixed(2)
+      console.log("formatedbalance", formatedbalance.toString())
+      setMATICbalance(formatedbalance.toString())
+
+   }
+
 
     async function getPrice(amountIn, swapOrder) {
 
@@ -89,8 +107,7 @@ export const TransactionProvider = ({ children }) => {
         if (!metamask) return alert('Please install metamask ')
   
         const accounts = await metamask.request({ method: 'eth_requestAccounts' })
-  
-        setCurrentAccount(accounts[0])
+        await setCurrentAccount(accounts[0])
       } catch (error) {
         console.error(error)
         throw new Error('No ethereum object.')
@@ -104,7 +121,8 @@ export const TransactionProvider = ({ children }) => {
         const accounts = await metamask.request({ method: 'eth_accounts' })
   
         if (accounts.length) {
-          setCurrentAccount(accounts[0])
+          await setCurrentAccount(accounts[0])
+          await getTokensBalance(accounts[0])
           console.log('wallet already connected')
         }
       } catch (error) {
@@ -184,6 +202,8 @@ export const TransactionProvider = ({ children }) => {
             sendSwap,
             isLoading,
             getPrice,
+            MWPbalance,
+            MATICbalance,
          }}
       >
          {children}

@@ -14,13 +14,13 @@ import ConfigModal from './ConfigModal'
 
 
 const style = {
-   wrapper: `w-screen flex items-center justify-center mt-14`,
+   wrapper: `w-screen flex flex-col items-center justify-center mt-14`,
    content: `bg-[#ffffff] w-[35rem] rounded-2xl p-4`,
    formHeader: `px-2 flex items-center justify-between font-semibold text-xl text-[#00000c]`,
-   transferPropContainer: `bg-[#f7f8fa] my-3 rounded-2xl p-6 text-3xl border hover:border-[#cfd0d4] flex justify-between`,
+   transferPropContainer: `bg-[#f7f8fa] my-3 rounded-2xl p-4 text-3xl border hover:border-[#cfd0d4] flex justify-between`,
    transferPropInput: `bg-transparent placeholder:text-[#B2B9D2] outline-none mb-6 w-full text-2xl text-[#00000c]`,
    transferPropOutput: `bg-transparent placeholder:text-[#B2B9D2] outline-none mb-6  w-full h-[27px]  text-2xl text-[#00000c]`,
-   currencySelector: `flex w-2/5`,
+   currencySelector: `flex w-2/5 flex flex-col`,
    currencySelectorContent: `w-full h-min flex justify-between items-center shadow-md bg-[#edeef2] hover:bg-[#c2c3c5] rounded-2xl text-[#00000c] text-xl font-medium cursor-pointer p-2 mt-[-0.2rem]`,
    currencySelectorIcon: `flex items-center`,
    currencySelectorTicker: `mx-2`,
@@ -28,6 +28,7 @@ const style = {
    confirmButton: `bg-gradient-to-r from-[#00b09b] animate-pulse to-[#08d37e] hover:bg-[#cf0063] my-2 rounded-2xl py-6 px-8 text-xl text-[white] font-semibold flex items-center justify-center cursor-pointer`,
    gearcontainer: `cursor-pointer`,
    swapOrder: `text-center cursor-pointer mt-[-20px] mb-[-25px]`,
+   balance: 'flex flex-col text-end text-[16px] text-[gray]',
   }
 
  const customStyles = {
@@ -47,7 +48,7 @@ const style = {
  }
 
 const Swap = () => {
-   const { getPrice, sendSwap, getContractBalance } = useContext(TransactionContext)
+   const { getPrice, sendSwap, getContractBalance, MWPbalance, MATICbalance } = useContext(TransactionContext)
    const router = useRouter()
    const [contractBalance, setContractBalance] = useState()
    const [amountIn, setAmountIn] = useState("")
@@ -57,6 +58,9 @@ const Swap = () => {
    const [deadlineMinutes, setDeadlineMinutes] = useState<any>(30)
    const [slippageAmount, setSlippageAmount] = useState<any>(30)
    const [swapOrder, setSwapOrder] = useState("mwpmatic")
+   const [mwpbalance, setmwpbalance] = useState()
+   const [maticbalance, setmaticbalance] = useState()
+
    const inputUp:any = useRef(null);
    const feeAmount = 0.05 //5%
   
@@ -70,14 +74,24 @@ const Swap = () => {
 
   }
 
+  useEffect(()=> {
+    if (!MWPbalance) return
+    setmwpbalance(MWPbalance)
+ }, [MWPbalance])
+  useEffect(()=> {
+    if (!MATICbalance) return
+    setmaticbalance(MATICbalance)
+ }, [MATICbalance])
+
   useEffect( () => {
     const onLoad = async () => {
         setloading(true)
         setAmountIn("1")
         const amountOut = await getPrice("1", swapOrder)
+        setContractBalance(await getContractBalance())
         setAmountOut(amountOut[0])
         setloading(false) 
-        setContractBalance(await getContractBalance())    
+
       }
       onLoad()
   }, [])
@@ -151,6 +165,7 @@ const Swap = () => {
                   </div>
                   <div className={style.currencySelectorTicker}>MATIC</div>
                   <AiOutlineDown className={style.currencySelectorArrow} />
+                  <a className={style.balance}>Balance: {mwpbalance}</a>
                 </div>
               </div>
             </div>
@@ -175,7 +190,10 @@ const Swap = () => {
                   <div className={style.currencySelectorTicker}>MWP</div>
                   <AiOutlineDown className={style.currencySelectorArrow} />
                 </div>
+                <a className={style.balance}>Balance: {mwpbalance}</a>
               </div>
+
+              
             </div>
             
             
@@ -222,6 +240,8 @@ const Swap = () => {
                     <div className={style.currencySelectorTicker}>MWP</div>
                     <AiOutlineDown className={style.currencySelectorArrow} />
                   </div>
+                  <a className={style.balance}>Balance: {maticbalance}</a>
+
                 </div>
             </div>
 
@@ -256,6 +276,8 @@ const Swap = () => {
                     <div className={style.currencySelectorTicker}>MATIC</div>
                     <AiOutlineDown className={style.currencySelectorArrow} />
                   </div>
+                  <a className={style.balance}>Balance: {maticbalance}</a>
+
                 </div>
             </div>
           
@@ -267,19 +289,16 @@ const Swap = () => {
             <div className={style.confirmButton} onClick={async ()=>{await sendSwap(amountIn, amountOut, deadlineMinutes, slippageAmount, swapOrder); await setContractBalance(await getContractBalance()) }}>
               Confirm
             </div>
-          <div className='text-[#808080]'>
-          Intermediary Contract Balance: {contractBalance} MATIC
-         </div>
           </div>
 
           <Modal isOpen={!!router.query.loading} style={customStyles}>
             <TransactionLoader />
           </Modal>
+
+          <div className='text-[#808080] mt-[10px]'>
+          feeCollector Balance: { !loading ? `${contractBalance} MATIC`:"" }
+         </div>
           
-
-          <div>
-
-          </div>
       </div>
    </>      
   )
