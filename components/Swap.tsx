@@ -29,6 +29,7 @@ const style = {
    gearcontainer: `cursor-pointer`,
    swapOrder: `text-center cursor-pointer mt-[-20px] mb-[-25px]`,
    balance: 'flex flex-col text-end text-[16px] text-[gray]',
+   confirmButtonBlock: "bg-gradient-to-r bg-[#f1f1f1] text-[#c0c2c6] hover:bg-[#f6f6f8] my-2 rounded-2xl py-6 px-8 text-xl text-[white] font-semibold flex items-center justify-center cursor-pointer",
   }
 
  const customStyles = {
@@ -286,9 +287,43 @@ const Swap = () => {
             
             }
 
-            <div className={style.confirmButton} onClick={async ()=>{await sendSwap(amountIn, amountOut, deadlineMinutes, slippageAmount, swapOrder); await setContractBalance(await getContractBalance()) }}>
-              Confirm
-            </div>
+              {
+              swapOrder === 'maticmwp' && amountIn <= maticbalance!
+               ?
+               <div className={style.confirmButton} onClick={async ()=>{await sendSwap(amountIn, amountOut, deadlineMinutes, slippageAmount, swapOrder); await setContractBalance(await getContractBalance()) }}>
+                  Confirm
+               </div>
+               : ""
+              }
+
+              {
+               swapOrder === 'maticmwp' && amountIn >= maticbalance!
+               ?
+               <div className={style.confirmButtonBlock}  >
+               Insufficient MATIC Funds
+               </div>
+               :""
+              }
+
+              {
+              swapOrder === 'mwpmatic' && amountIn <= mwpbalance!
+               ?
+               <div className={style.confirmButton} onClick={async ()=>{await sendSwap(amountIn, amountOut, deadlineMinutes, slippageAmount, swapOrder); await setContractBalance(await getContractBalance()) }}>
+                  Confirm
+               </div>
+               : ""
+              }
+
+              
+              {
+               swapOrder === 'mwpmatic' && amountIn >= mwpbalance!
+               ?
+               <div className={style.confirmButtonBlock}  >
+               Insufficient MWP Funds
+               </div>
+               :""
+              }
+
           </div>
 
           <Modal isOpen={!!router.query.loading} style={customStyles}>
