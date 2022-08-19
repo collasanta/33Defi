@@ -165,8 +165,8 @@ const Swap = () => {
                   </div>
                   <div className={style.currencySelectorTicker}>MATIC</div>
                   <AiOutlineDown className={style.currencySelectorArrow} />
-                  <a className={style.balance}>Balance: {mwpbalance}</a>
                 </div>
+                  <a className={style.balance}>Balance: {maticbalance}</a>
               </div>
             </div>
             
@@ -240,7 +240,7 @@ const Swap = () => {
                     <div className={style.currencySelectorTicker}>MWP</div>
                     <AiOutlineDown className={style.currencySelectorArrow} />
                   </div>
-                  <a className={style.balance}>Balance: {maticbalance}</a>
+                  <a className={style.balance}>Balance: {mwpbalance}</a>
 
                 </div>
             </div>
