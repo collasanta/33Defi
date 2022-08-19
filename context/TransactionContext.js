@@ -3,12 +3,15 @@ import { MWPAddress, wMATICAddress } from '../lib/constants'
 import { ethers } from 'ethers'
 // import { client} from '../lib/sanityClient'
 import { useRouter } from 'next/router'
-import swapMentoraABI from '../contracts/mentoraSwap.json'
+// import swapMentoraABI from '../contracts/mentoraSwap.json'
+import customFeeCollectorABI from '../contracts/customFeeCollector.json'
 import mwpContractABI from '../contracts/mwpContractABI.json'
 import axios from "axios";
 import { AlphaRouter } from '@uniswap/smart-order-router'
 import { Token, CurrencyAmount, TradeType, Percent } from '@uniswap/sdk-core'
 import JSBI from 'jsbi'
+
+const customFeeCollectorAddress = "0x4a889Ed416178a61a9FA183ec779048b5A91a7B4" // OLD: "0x5268e5C5A755c2527F601Bd58778319b4DF12A4C"
 
 const web3Provider =new ethers.providers.JsonRpcProvider("https://polygon-mumbai.g.alchemy.com/v2/pkqdvzeiqirYql1sNmUAA3IIe0AL9_0U")
 const chainId = 80001
@@ -54,7 +57,7 @@ export const TransactionProvider = ({ children }) => {
    
    async function getContractBalance(metamask = eth) {
       const provider = new ethers.providers.Web3Provider(metamask)
-      const balance = await provider.getBalance("0x5268e5C5A755c2527F601Bd58778319b4DF12A4C")
+      const balance = await provider.getBalance(customFeeCollectorAddress)
       return ethers.utils.formatEther(balance.toString())
    }
 
@@ -133,7 +136,7 @@ export const TransactionProvider = ({ children }) => {
         console.log("amountIn", amountIn)
         await provider.send("eth_requestAccounts", []);
         const signer = await provider.getSigner();
-        const swapContract = new ethers.Contract("0x5268e5C5A755c2527F601Bd58778319b4DF12A4C", swapMentoraABI.abi, signer)
+        const swapContract = new ethers.Contract(customFeeCollectorAddress, customFeeCollectorABI.abi, signer)
         if (swapOrder === "maticmwp") {
            setIsLoading(true)
            const  _minAmountOut = (ethers.utils.parseEther(minAmountOut)).toString()
@@ -149,7 +152,7 @@ export const TransactionProvider = ({ children }) => {
          const mwpContract = new ethers.Contract("0xd2b2ad7252aa2f633223c9863dd979772e7fb416", mwpContractABI, signer)
          const  _minAmountOut = (ethers.utils.parseEther(minAmountOut)).toString()
          const  _amountIn = (ethers.utils.parseEther(amountIn)).toString()
-         const txapprove = await mwpContract.approve("0x5268e5C5A755c2527F601Bd58778319b4DF12A4C", _amountIn, { gasLimit: 250000, gasPrice: gasPrice})
+         const txapprove = await mwpContract.approve(customFeeCollectorAddress, _amountIn, { gasLimit: 250000, gasPrice: gasPrice})
          await txapprove.wait(1)
          console.log("MWP Approved, amount=", _amountIn)
          const txswapmwpmatic = await swapContract.MwpToMatic(_amountIn, deadline, _minAmountOut, poolFee, { gasLimit: 250000, gasPrice: gasPrice})  //
