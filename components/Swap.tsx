@@ -167,7 +167,13 @@ const Swap = () => {
                   <div className={style.currencySelectorTicker}>MATIC</div>
                   <AiOutlineDown className={style.currencySelectorArrow} />
                 </div>
-                  <a className={style.balance}>Balance: {maticbalance}</a>
+                <a className={style.balance}>{
+                  currentAccount ?
+                  `Balance: ${maticbalance}`
+                  :
+                  ""
+                  }
+                  </a>
               </div>
             </div>
             
@@ -191,7 +197,13 @@ const Swap = () => {
                   <div className={style.currencySelectorTicker}>MWP</div>
                   <AiOutlineDown className={style.currencySelectorArrow} />
                 </div>
-                <a className={style.balance}>Balance: {mwpbalance}</a>
+                <a className={style.balance}>{
+                  currentAccount ?
+                  `Balance: ${mwpbalance}`
+                  :
+                  ""
+                  }
+                  </a>
               </div>
 
               
@@ -241,7 +253,13 @@ const Swap = () => {
                     <div className={style.currencySelectorTicker}>MWP</div>
                     <AiOutlineDown className={style.currencySelectorArrow} />
                   </div>
-                  <a className={style.balance}>Balance: {mwpbalance}</a>
+                  <a className={style.balance}>{
+                  currentAccount ?
+                  `Balance: ${mwpbalance}`
+                  :
+                  ""
+                  }
+                  </a>
 
                 </div>
             </div>
@@ -277,7 +295,13 @@ const Swap = () => {
                     <div className={style.currencySelectorTicker}>MATIC</div>
                     <AiOutlineDown className={style.currencySelectorArrow} />
                   </div>
-                  <a className={style.balance}>Balance: {maticbalance}</a>
+                  <a className={style.balance}>{
+                  currentAccount ?
+                  `Balance: ${maticbalance}`
+                  :
+                  ""
+                  }
+                  </a>
 
                 </div>
             </div>
@@ -339,7 +363,7 @@ const Swap = () => {
           </Modal>
 
           <div className='text-[#808080] mt-[10px]'>
-          feeCollector Balance: { !loading ? `${contractBalance} MATIC`:"" }
+           { !loading ? `feeCollector Balance: ${contractBalance} MATIC`:"" }
          </div>
           
       </div>
