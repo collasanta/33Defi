@@ -49,7 +49,7 @@ const style = {
  }
 
 const Swap = () => {
-   const { getPrice, sendSwap, getContractBalance, MWPbalance, MATICbalance } = useContext(TransactionContext)
+   const { getPrice, sendSwap, getContractBalance, MWPbalance, MATICbalance, connectWallet, currentAccount } = useContext(TransactionContext)
    const router = useRouter()
    const [contractBalance, setContractBalance] = useState()
    const [amountIn, setAmountIn] = useState("")
@@ -324,6 +324,14 @@ const Swap = () => {
                :""
               }
 
+              {
+               !currentAccount
+               ?
+               <div className={style.confirmButton} onClick={() => connectWallet()}>
+                  Connect Wallet
+               </div>
+               :""
+              }
           </div>
 
           <Modal isOpen={!!router.query.loading} style={customStyles}>
